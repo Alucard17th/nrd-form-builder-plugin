@@ -1,0 +1,21 @@
+/**
+ * All of the CSS for your public-facing functionality should be
+ * included in this file.
+ */
+ 
+.nrd-form-bd-success-message{
+    margin-top: 0.8rem;
+    color: green;
+    font-weight: 700;
+}
+
+.nrd-form-bd-error-message{
+    margin-top: 0.8rem;
+    color: red;
+    font-weight: 700;
+}
+
+/* edit the submit button */
+#fb-rendered-form button.btn-default{
+    color: white !important;
+}

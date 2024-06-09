@@ -1,0 +1,56 @@
+/**
+ * All of the CSS for your admin-specific functionality should be
+ * included in this file.
+ */
+
+#fb-rendered-form {
+    clear: both;
+    display: none;
+}
+
+#fb-rendered-form button {
+    float: right;
+}
+
+.nrd-short-code:hover{
+    cursor: pointer;
+}
+
+#nrd-form-bd-license-key {
+    width: 20vw;
+}
+
+.nrd-form-bd-error-message{
+    color: red;
+}
+
+#nrd-form-bd-deactivate-button{
+    margin-left: 10px !important;
+    background-color: red !important;
+    border: none !important;
+    color: white !important;
+}
+
+.nrd-form-bd-card{
+    padding: 10px;
+    background-color: white;
+    /* add shadow */
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    border-bottom: 3px solid rgb(74,196,243);
+    border-right: 3px solid rgb(74,196,243);
+}
+.nrd-form-bd-card-content{
+    display: flex;
+    justify-content: space-around;
+}
+.nrd-form-bd-activate{
+    color: green;
+}
+.nrd-form-bd-inactive{
+    color: red;
+}
+
+.form-wrap.form-builder .frmb-control li::before{
+    color: #4AC4F3 !important;
+    font-size: 20px !important;
+}
