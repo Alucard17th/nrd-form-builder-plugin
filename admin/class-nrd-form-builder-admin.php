@@ -262,8 +262,11 @@ class Nrd_Form_Builder_Admin {
 		if ($screen->base == 'post' && isset($_GET['action']) && $_GET['action'] == 'edit') {
 			$post_id = isset($_GET['post']) ? intval($_GET['post']) : 0;
 			$linkedSheetId = get_post_meta($post_id, 'nrd_form_bd_google_sheet_id', true);
+			$linkedSheetPage = get_post_meta($post_id, 'nrd_form_bd_google_sheet_page', true);
 			echo '<h3>Google Sheet ID</h3>';
 			echo '<input type="text" name="google_sheet_id" id="google_sheet_id" style="width: 100%;" value="' . $linkedSheetId . '">';
+			echo '<h3>Google Sheet Page</h3>';
+			echo '<input type="text" name="google_sheet_page" id="google_sheet_page" style="width: 100%;" value="' . $linkedSheetPage . '">';
 		}
 		
 	}
@@ -279,7 +282,6 @@ class Nrd_Form_Builder_Admin {
 	public function save_nrd_wp_fb()
 	{
 		$post_id = $_POST['post_id'];
-		
 		if(!$post_id){
 			// Create an array of post data for the new post
 			$new_post = array(
@@ -311,8 +313,13 @@ class Nrd_Form_Builder_Admin {
 			// Insert post into the database
 			$post_id = wp_update_post($update_post, true); // Use $wp_error set to true for error handling
 
-			update_post_meta($post_id, 'nrd_form_bd_google_sheet_id', $_POST['google_sheet_id']);
-
+			if($_POST['google_sheet_id']){
+				update_post_meta($post_id, 'nrd_form_bd_google_sheet_id', $_POST['google_sheet_id']);
+			}
+			if($_POST['google_sheet_page']){
+				update_post_meta($post_id, 'nrd_form_bd_google_sheet_page', $_POST['google_sheet_page']);
+			}
+			
 			if (is_wp_error($post_id)) {
 				wp_send_json_error( "Error: " . $post_id->get_error_message() );
 			} else {
@@ -321,11 +328,7 @@ class Nrd_Form_Builder_Admin {
 		}
 	}
 
-
-
-
 	function isLicenseActive() {
-
 		$license_key = get_option( 'nrd_form_builder_license_key' );
 		$license_status = get_option( 'nrd_form_builder_license_status' );
 		$license_expiry = get_option( 'nrd_form_builder_license_expiry' );
@@ -344,17 +347,6 @@ class Nrd_Form_Builder_Admin {
 		$option = update_option('nrd_form_bd_license_active', $status);
 		$license = update_option('nrd_form_bd_field_license_key', $_POST['license_key']);
 		wp_send_json_success( 'License Updated to ' . $status . ' || ' . $license);
-
-		// if(!$option && $option == ''){
-		// 	// Error occurred while inserting the post
-		// 	$option = add_option('nrd_form_bd_license_active', $status);
-		// 	wp_send_json_success( 'License Activated' . $status);
-		// 	// wp_send_json_error( 'License Activation Failed' );
-		// }else {
-		// 	// The post was successfully inserted, and $post_id contains the post ID
-		// 	$option = update_option('nrd_form_bd_license_active', $status);
-		// 	wp_send_json_success( 'License Updated '. $option);
-		// }
 	}
 
 	// SAVE THE EXCEL SHEET 

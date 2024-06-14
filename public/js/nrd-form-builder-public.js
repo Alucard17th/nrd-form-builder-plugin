@@ -1,4 +1,4 @@
-(function( $ ) {
+(function ($) {
 	'use strict';
 
 	/**
@@ -31,35 +31,45 @@
 
 	$(window).load(function () {
 		jQuery(function ($) {
-			$(document).ready(function() {
+			$(document).ready(function () {
 				// render the form
-				if (typeof formData !== 'undefined') {
-					console.log('formData', formData);
+				if (typeof formRenderData !== 'undefined') {
+					console.log('formRenderData', formRenderData);
 					$('#fb-rendered-form').formRender({
-						formData: formData
+						formData: formRenderData
 					});
 				}
 			})
 
 			var formRenderContainer = $('#fb-rendered-form');
-			formRenderContainer.on('submit', function(event) {
+			var formRenderContainer = $('#fb-rendered-form');
+			formRenderContainer.on('submit', function (event) {
 				event.preventDefault(); // Prevent the default form submission
-				// get form data using jQuery serialize
-				var formData = formRenderContainer.serialize();
-				var submitButton = formRenderContainer.find('button[type="submit"]');
-    			submitButton.prop('disabled', true).text('Loading...');
 
-				var google_sheet_id = $('#google_sheet_id').val();
-				postNrdFb(formData, submitButton, google_sheet_id);
+				// Create a FormData object to capture all form data including files
+				var formData = new FormData(this);
+
+				// Append additional data
+				formData.append('action', 'post_nrd_wp_fb');
+				formData.append('google_sheet_id', $('#google_sheet_id').val());
+				formData.append('google_sheet_page', $('#google_sheet_page').val());
+				formData.append('form_title', $('#form_title').val());
+
+				var submitButton = formRenderContainer.find('button[type="submit"]');
+				submitButton.prop('disabled', true).text('Loading...');
+
+				postNrdFb(formData, submitButton);
 			});
 
-			function postNrdFb(data, submitButton, google_sheet_id) {
+			function postNrdFb(data, submitButton) {
 				// console.log(data);
 				$('.nrd-form-bd-message').remove();
 				$.ajax({
-					data: { action: 'post_nrd_wp_fb', data: data, google_sheet_id: google_sheet_id },
-					type: 'post',
+					data: data,
+					type: 'POST',
 					url: my_ajax_object.ajax_url,
+					processData: false, // Prevent jQuery from processing the data
+					contentType: false, // Prevent jQuery from setting the content type
 					success: function (data) {
 						submitButton.prop('disabled', false).text('Submit');
 						$('<div class="nrd-form-bd-message nrd-form-bd-success-message">Form submitted successfully!</div>').insertAfter(submitButton);
@@ -73,4 +83,4 @@
 		});
 	});
 
-})( jQuery );
+})(jQuery);

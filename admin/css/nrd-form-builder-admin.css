@@ -54,3 +54,14 @@
     color: #4AC4F3 !important;
     font-size: 20px !important;
 }
+
+.step-delete-btn{
+    margin-left: 10px;
+    color: red;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 20px;
+    border-radius: 50%;
+    background-color: white;
+    padding: 0px 6px;
+}

@@ -111,14 +111,10 @@ class Nrd_Form_Builder_Public {
 
 			$post = get_post($id);
 			$content = $post->post_content;
-			$title = $post->post_title;
 			$linkedSheetId = get_post_meta($id, 'nrd_form_bd_google_sheet_id', true);
-			$linkedSheetPage = get_post_meta($id, 'nrd_form_bd_google_sheet_page', true);
 			$json_content = json_encode($content);
 			$output = '<form id="fb-rendered-form" enctype="multipart/form-data"></form>';
 			$output .=  '<input type="hidden" id="google_sheet_id" value="' . $linkedSheetId . '">';
-			$output .=  '<input type="hidden" id="google_sheet_page" value="' . $linkedSheetPage . '">';
-			$output .=  '<input type="hidden" id="form_title" value="' . $title . '">';
 
 			if($content != ''){
 				$json_content = json_encode($content);
@@ -179,128 +175,116 @@ class Nrd_Form_Builder_Public {
 		$dataArray = $_POST;
 		unset($dataArray['action']);
 		unset($dataArray['google_sheet_id']);
-		unset($dataArray['google_sheet_page']);
-		unset($dataArray['form_title']);
 
 		// merge dataArray and uploaded_files array to create final array
 		$form_data = array_merge($dataArray, $uploaded_files);
 		$googleSheetId = $_POST['google_sheet_id'];
-		$googleSheetPage = $_POST['google_sheet_page'];
-		$formTitle = $_POST['form_title'];
-		$successMessages = [];
-		$errorMessages = [];
 
-		$sent = $this->sendNotificationEmail($form_data, $formTitle);
-        if ($sent) {
-			$successMessages[] = 'Form data received and email sent successfully';
-		} else {
-			$errorMessages[] = 'Failed to send email';
-		}
+		// $form_data = [];
+		// parse_str($_POST['data'], $form_data);
+		// if (empty($errors)) {
+		// 	wp_send_json_success(array('message' => 'Files uploaded successfully', 'files' => $uploaded_files));
+		// } else {
+		// 	wp_send_json_error(array('message' => 'Some files could not be uploaded', 'errors' => $errors));
+		// }
 
-		if ($googleSheetId != '') {
-			if ($this->addLeadToGoogleSheets($form_data, $googleSheetId, $googleSheetPage)) {
-				$successMessages[] = 'Lead added to Google Sheets successfully';
+		if($googleSheetId != ''){
+			if ($this->addLeadToGoogleSheets($form_data, $googleSheetId)) {
+				wp_send_json_success('Lead added to Google Sheets successfully.');
 			} else {
-				$errorMessages[] = 'Failed to add lead to Google Sheets. Please check the error log.';
+				wp_send_json_error('Failed to add lead to Google Sheets. Please check the error log.');
 			}
 		}
+		wp_send_json_success('Lead added to Google Sheets successfully.');
 
-		if (empty($errorMessages)) {
-			wp_send_json_success(array(
-				'status' => 'success',
-				'messages' => $successMessages
-			));
-		} else {
-			wp_send_json_error(array(
-				'status' => 'error',
-				'messages' => $errorMessages
-			));
-		}
+		// get wordpress admin email 
+		// $adminEmail = get_option('admin_email');
+		// // Format the form data into an HTML email
+        // $email_body = "<h1>New Form Submission</h1>";
+        // $email_body .= "<table border='1' cellpadding='5' cellspacing='0'>";
+        // foreach ($form_data as $key => $value) {
+        //     $email_body .= "<tr>";
+        //     $email_body .= "<th style='text-align:left;'>".esc_html($key)."</th>";
+        //     $email_body .= "<td>".esc_html($value)."</td>";
+        //     $email_body .= "</tr>";
+        // }
+        // $email_body .= "</table>";
+
+        // // Email headers
+        // $headers = array('Content-Type: text/html; charset=UTF-8');
+
+        // // Send the email
+        // $to = 'recipient@example.com'; // Replace with your recipient email address
+        // $subject = 'New Form Submission';
+        // $sent = wp_mail($to, $subject, $email_body, $headers);
+
+
+        // if ($sent) {
+        //     wp_send_json_success(array(
+        //         'status' => 'success',
+        //         'message' => 'Form data received and email sent successfully'
+        //     ));
+        // } else {
+        //     wp_send_json_error(array(
+        //         'status' => 'error',
+        //         'message' => 'Failed to send email'
+        //     ));
+        // }
 
 		wp_die();
 	}
 
-	function addLeadToGoogleSheets($leadData, $googleSheetId, $googleSheetPage) {
+	function addLeadToGoogleSheets($leadData, $googleSheetId) {
 		require_once plugin_dir_path(__DIR__) . 'vendor/autoload.php';
-	
-		try {
-			// Configure the Google Client
-			$client = new \Google_Client();
-			$client->setApplicationName('Google Sheets with Primo');
-			$client->setScopes([\Google_Service_Sheets::SPREADSHEETS]);
-			$client->setAccessType('offline');
-			$client->setAuthConfig(__DIR__ . '/credentials.json');
-		
-			$service = new Google_Service_Sheets($client);
-			$spreadsheetId = $googleSheetId;
-		
-			$range = $googleSheetPage; // Sheet name
-			// Prepare headers and values
-			$headers = array_keys($leadData);
-			$values = array_values($leadData);
-	
-			// Get the existing headers from the sheet
-			$response = $service->spreadsheets_values->get($spreadsheetId, $range);
-			$existingHeaders = $response->getValues() ? $response->getValues()[0] : [];
-	
-			// If headers are not present, add them
-			if (empty($existingHeaders)) {
-				$headerBody = new Google_Service_Sheets_ValueRange([
-					'values' => [$headers]
-				]);
-				$service->spreadsheets_values->append(
-					$spreadsheetId,
-					$range,
-					$headerBody,
-					['valueInputOption' => 'RAW']
-				);
-			}
-	
-			// Append values
-			$valueBody = new Google_Service_Sheets_ValueRange([
-				'values' => [$values]
-			]);
-			$params = [
-				'valueInputOption' => 'RAW'
-			];
-	
-			$result = $service->spreadsheets_values->append(
-				$spreadsheetId,
-				$range,
-				$valueBody,
-				$params
-			);
-	
-			return true; // Success
-		} catch (Exception $e) {
-			error_log('Error adding lead to Google Sheets: ' . $e->getMessage());
-			return false; // Failure
-		}
-	}
 
-	function sendNotificationEmail($form_data, $formTitle) {
-		// get wordpress admin email 
-		$adminEmail = get_option('admin_email');
-		// Format the form data into an HTML email
-        $email_body = "<h1>New Form Submission for: ".esc_html($formTitle)."</h1>";
-        $email_body .= "<table border='1' cellpadding='5' cellspacing='0'>";
-        foreach ($form_data as $key => $value) {
-            $email_body .= "<tr>";
-            $email_body .= "<th style='text-align:left;'>".esc_html($key)."</th>";
-            $email_body .= "<td>".esc_html($value)."</td>";
-            $email_body .= "</tr>";
+		// configure the Google Client
+		$client = new \Google_Client();
+		$client->setApplicationName('Google Sheets with Primo');
+		$client->setScopes([\Google_Service_Sheets::SPREADSHEETS]);
+		$client->setAccessType('offline');
+		$client->setAuthConfig(__DIR__ . '/credentials.json');
+	
+		$service = new Google_Service_Sheets($client);
+		// $spreadsheetId = "10v7vxW_ZMFsOoQIeK8EMMdNnKHwQ5raLNR84Hyat4Is";
+		$spreadsheetId = $googleSheetId;
+	
+		$range = "Sheet1"; // Sheet name
+		// Prepare headers and values
+        $headers = array_keys($leadData);
+        $values = array_values($leadData);
+
+        // Get the existing headers from the sheet
+        $response = $service->spreadsheets_values->get($spreadsheetId, $range);
+        $existingHeaders = $response->getValues() ? $response->getValues()[0] : [];
+
+        // If headers are not present, add them
+        if (empty($existingHeaders)) {
+            $headerBody = new Google_Service_Sheets_ValueRange([
+                'values' => [$headers]
+            ]);
+            $service->spreadsheets_values->append(
+                $spreadsheetId,
+                $range,
+                $headerBody,
+                ['valueInputOption' => 'RAW']
+            );
         }
-        $email_body .= "</table>";
 
-        // Email headers
-        $headers = array('Content-Type: text/html; charset=UTF-8');
+        // Append values
+        $valueBody = new Google_Service_Sheets_ValueRange([
+            'values' => [$values]
+        ]);
+        $params = [
+            'valueInputOption' => 'RAW'
+        ];
 
-        // Send the email
-        $to = 'recipient@example.com'; // Replace with your recipient email address
-        $subject = 'New Form Submission';
-        $sent = wp_mail($to, $subject, $email_body, $headers);
-
-		return $sent;
+        $result = $service->spreadsheets_values->append(
+            $spreadsheetId,
+            $range,
+            $valueBody,
+            $params
+        );
 	}
+
 	
 }

@@ -48,7 +48,7 @@
 						console.log(formBuilder.formData, postId);
 						saveNrdFb(formBuilder.formData, postId, saveBtn);
 						// make the clicked save button disabled
-						
+
 					}
 				};
 
@@ -70,11 +70,12 @@
 				saveBtn.text('Saving...');
 				let title = document.getElementById('title').value;
 				let googleSheetID = document.getElementById('google_sheet_id') ? document.getElementById('google_sheet_id').value : '';
+				let googleSheetPage = document.getElementById('google_sheet_page') ? document.getElementById('google_sheet_page').value : '';
 				if (title == '') {
 					title = 'Untitled Form';
 				}
 				$.ajax({
-					data: { action: 'save_nrd_wp_fb', title: title, content: data, post_id: postID, google_sheet_id: googleSheetID },
+					data: { action: 'save_nrd_wp_fb', title: title, content: data, post_id: postID, google_sheet_id: googleSheetID, google_sheet_page: googleSheetPage },
 					type: 'post',
 					url: ajaxurl,
 					success: function (data) {
@@ -92,10 +93,10 @@
 			$('.nrd-short-code').click(function () {
 				const postID = $('#post_id').val();
 				const customerLink = '[nrd_form_bd id="' + postID + '"]';
-    			navigator.clipboard.writeText(customerLink);
+				navigator.clipboard.writeText(customerLink);
 				$('.nrd-short-code-copy').show();
 				// hide the copy button after 3 seconds
-				setTimeout(function() {
+				setTimeout(function () {
 					$('.nrd-short-code-copy').hide();
 				}, 1500);
 			})
@@ -113,17 +114,17 @@
 				form.append("domain", "www.zenappoint.com");
 
 				var settings = {
-				"url": nrdActivateLicenserAPIUrl,
-				"method": "POST",
-				"timeout": 0,
-				"headers": {
-					"Authorization": "Bearer 3|7LDk8Aopn8eaIchFfBkvOD500miXLhzVOtVBrdfYe3487bf9",
-					"Cookie": "XSRF-TOKEN=eyJpdiI6ImxJcUEwelgweDhaZlBzU1BkQkZtSVE9PSIsInZhbHVlIjoiaU5XQ3ZEc3J0c1NVY2YzU0pHUERhWGRUTU5abFZxa0RtaGlTM1laeXpTNFcwMHpCaFA5RXN3RVNkdm5GU1lrQVVpYlVhclA4MHAyaGVMQy9tSWZwajU2VExxRzFQRG15Qjc3OU5lUEVsN2tUY0pISktYRzZwZWhYN3JnY2VtVGMiLCJtYWMiOiJmYjhkZTk2Nzc1NTA3Mzc0NjJlODcyZGNhNTcxODFjMjI2NWNiY2JmOThhNjQ0OTNjODBkNGYzZTgyNjgxOTI2IiwidGFnIjoiIn0%3D; laravel_session=eyJpdiI6IjBVeU5OK3JMTmpEVXVtU1pBYVR2dUE9PSIsInZhbHVlIjoiWlFxYzR1RWlidUxPT2xDdnA3RURZUkM5ZzdpZ1dTMlJVTVN2MVpxbitMazlrWXppaFFGa0tON3BWN1lUNTVzeVZUR0VIRHdhV1E0Y2RMWDNRS1ZjNTlwOWtKYW81cDhtQU9yaDF1cTRUWUNxWEhhN2ZOb0pIcU9jR2tFTGtxZHMiLCJtYWMiOiJjMjUwMDc4Y2M3MDlkN2M3NjIzZjk5ZmZjZThiMTgzODlkOWVlODFiMzgyZjdkZGY0N2FmMzI1OThhOWNiY2ZiIiwidGFnIjoiIn0%3D"
-				},
-				"processData": false,
-				"mimeType": "multipart/form-data",
-				"contentType": false,
-				"data": form
+					"url": nrdActivateLicenserAPIUrl,
+					"method": "POST",
+					"timeout": 0,
+					"headers": {
+						"Authorization": "Bearer 3|7LDk8Aopn8eaIchFfBkvOD500miXLhzVOtVBrdfYe3487bf9",
+						"Cookie": "XSRF-TOKEN=eyJpdiI6ImxJcUEwelgweDhaZlBzU1BkQkZtSVE9PSIsInZhbHVlIjoiaU5XQ3ZEc3J0c1NVY2YzU0pHUERhWGRUTU5abFZxa0RtaGlTM1laeXpTNFcwMHpCaFA5RXN3RVNkdm5GU1lrQVVpYlVhclA4MHAyaGVMQy9tSWZwajU2VExxRzFQRG15Qjc3OU5lUEVsN2tUY0pISktYRzZwZWhYN3JnY2VtVGMiLCJtYWMiOiJmYjhkZTk2Nzc1NTA3Mzc0NjJlODcyZGNhNTcxODFjMjI2NWNiY2JmOThhNjQ0OTNjODBkNGYzZTgyNjgxOTI2IiwidGFnIjoiIn0%3D; laravel_session=eyJpdiI6IjBVeU5OK3JMTmpEVXVtU1pBYVR2dUE9PSIsInZhbHVlIjoiWlFxYzR1RWlidUxPT2xDdnA3RURZUkM5ZzdpZ1dTMlJVTVN2MVpxbitMazlrWXppaFFGa0tON3BWN1lUNTVzeVZUR0VIRHdhV1E0Y2RMWDNRS1ZjNTlwOWtKYW81cDhtQU9yaDF1cTRUWUNxWEhhN2ZOb0pIcU9jR2tFTGtxZHMiLCJtYWMiOiJjMjUwMDc4Y2M3MDlkN2M3NjIzZjk5ZmZjZThiMTgzODlkOWVlODFiMzgyZjdkZGY0N2FmMzI1OThhOWNiY2ZiIiwidGFnIjoiIn0%3D"
+					},
+					"processData": false,
+					"mimeType": "multipart/form-data",
+					"contentType": false,
+					"data": form
 				};
 
 				$.ajax(settings).done(function (response) {
@@ -131,14 +132,14 @@
 					response = JSON.parse(response);
 					console.log(response[0])
 					const status = response[0];
-					if(status == "invalid"){
+					if (status == "invalid") {
 						$('#nrd-form-bd-activate-button').prop('disabled', false);
 						$('#nrd-form-bd-activate-button').text('Activate');
 						// append error message after #nrd-form-bd-activate-button
 						$('<div class="nrd-form-bd-message nrd-form-bd-error-message">Invalid license key</div>').insertAfter($('#nrd-form-bd-activate-button'));
 					}
 
-					if(status == "active"){
+					if (status == "active") {
 						$.ajax({
 							data: { action: 'save_nrd_license_response', status: status, license_key: licenseKey },
 							type: 'post',
@@ -152,13 +153,13 @@
 							}
 						})
 					}
-					else if(status == "already_active"){
+					else if (status == "already_active") {
 						$('#nrd-form-bd-activate-button').prop('disabled', false);
 						$('#nrd-form-bd-activate-button').text('Activate');
 						// append error message after #nrd-form-bd-activate-button
 						$('<div class="nrd-form-bd-message nrd-form-bd-error-message">This license key is already active on another website.</div>').insertAfter($('#nrd-form-bd-activate-button'));
 					}
-					else{
+					else {
 						$('<div class="nrd-form-bd-message nrd-form-bd-error-message">This license key is suspended</div>').insertAfter($('#nrd-form-bd-activate-button'));
 					}
 				});
@@ -175,30 +176,30 @@
 				form.append("key", licenseKey);
 
 				var settings = {
-				"url": nrdDeactivateLicenserAPIUrl,
-				"method": "POST",
-				"timeout": 0,
-				"headers": {
-					"Authorization": "Bearer 3|7LDk8Aopn8eaIchFfBkvOD500miXLhzVOtVBrdfYe3487bf9"
-				},
-				"processData": false,
-				"mimeType": "multipart/form-data",
-				"contentType": false,
-				"data": form
+					"url": nrdDeactivateLicenserAPIUrl,
+					"method": "POST",
+					"timeout": 0,
+					"headers": {
+						"Authorization": "Bearer 3|7LDk8Aopn8eaIchFfBkvOD500miXLhzVOtVBrdfYe3487bf9"
+					},
+					"processData": false,
+					"mimeType": "multipart/form-data",
+					"contentType": false,
+					"data": form
 				};
 
 				$.ajax(settings).done(function (response) {
 					response = JSON.parse(response);
 					console.log(response[0])
 					const status = response[0];
-					if(status == "invalid"){
+					if (status == "invalid") {
 						$('#nrd-form-bd-deactivate-button').prop('disabled', false);
 						$('#nrd-form-bd-deactivate-button').text('Activate');
 						// append error message after #nrd-form-bd-deactivate-button
 						$('<div class="nrd-form-bd-message nrd-form-bd-error-message">Invalid license key</div>').insertAfter($('#nrd-form-bd-deactivate-button'));
 					}
 
-					if(status == "inactive"){
+					if (status == "inactive") {
 						$.ajax({
 							data: { action: 'save_nrd_license_response', status: status, license_key: licenseKey },
 							type: 'post',
