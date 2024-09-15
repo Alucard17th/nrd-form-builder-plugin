@@ -65,3 +65,8 @@
     background-color: white;
     padding: 0px 6px;
 }
+
+.copiable-item{
+    cursor: pointer;
+    background-color: rgb(214, 214, 214);
+}

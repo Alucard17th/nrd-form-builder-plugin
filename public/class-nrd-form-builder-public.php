@@ -198,10 +198,12 @@ class Nrd_Form_Builder_Public {
 		}
 
 		if ($googleSheetId != '') {
-			if ($this->addLeadToGoogleSheets($form_data, $googleSheetId, $googleSheetPage)) {
+			$result = $this->addLeadToGoogleSheets($form_data, $googleSheetId, $googleSheetPage);
+			if ($result === true) {
 				$successMessages[] = 'Lead added to Google Sheets successfully';
 			} else {
-				$errorMessages[] = 'Failed to add lead to Google Sheets. Please check the error log.';
+				// $result contains the error message returned from addLeadToGoogleSheets
+				$errorMessages[] = 'Failed to add lead to Google Sheets: ' . $result;
 			}
 		}
 
@@ -273,8 +275,8 @@ class Nrd_Form_Builder_Public {
 	
 			return true; // Success
 		} catch (Exception $e) {
-			error_log('Error adding lead to Google Sheets: ' . $e->getMessage());
-			return false; // Failure
+			// error_log('Error adding lead to Google Sheets: ' . $e->getMessage());
+			return $e->getMessage(); 
 		}
 	}
 
