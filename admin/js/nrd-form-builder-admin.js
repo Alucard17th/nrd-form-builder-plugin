@@ -74,15 +74,43 @@
 				if (title == '') {
 					title = 'Untitled Form';
 				}
+				if (googleSheetID !== '' && googleSheetPage == '') {
+					// Get the google_sheet_page element
+					let googleSheetPageInput = document.getElementById('google_sheet_page');
+					
+					// Check if an error message already exists, to avoid duplicate messages
+					let existingError = document.getElementById('google_sheet_error');
+					
+					if (!existingError) {
+						// Create an error message element
+						let errorMessage = document.createElement('span');
+						errorMessage.id = 'google_sheet_error'; // Assign an ID to prevent duplicate errors
+						errorMessage.style.color = 'red'; // Style the error message (you can also add more styling)
+						errorMessage.textContent = 'Error: Please provide a value for Google Sheet Page';
+						
+						// Insert the error message after the google_sheet_page input
+						googleSheetPageInput.parentNode.insertBefore(errorMessage, googleSheetPageInput.nextSibling);
+					}
+
+					saveBtn.prop('disabled', false);
+					saveBtn.text('Save');
+					return;
+				}
+				
 				$.ajax({
-					data: { action: 'save_nrd_wp_fb', title: title, content: data, post_id: postID, google_sheet_id: googleSheetID, google_sheet_page: googleSheetPage },
+					data: { 
+						action: 'save_nrd_wp_fb', 
+						title: title, content: data, 
+						post_id: postID, 
+						google_sheet_id: googleSheetID, 
+						google_sheet_page: googleSheetPage 
+					},
 					type: 'post',
 					url: ajaxurl,
 					success: function (data) {
 						console.log(data.data); //should print out the name since you sent it along
 						let editUrl = data.data;
 						window.location.href = editUrl;
-
 					},
 					error: function (jqXHR, textStatus, errorThrown) {
 						console.log(errorThrown);
@@ -227,6 +255,27 @@
 					}
 				});
 			})
+
+			// copy clicked item
+			$('.copiable-item').click(function () {
+				let element = $(this);
+				// Create a temporary textarea element to hold the text to be copied
+				const tempInput = document.createElement('textarea');
+				// Get the text content of the clicked element using jQuery's .text() method
+				tempInput.value = element.text();
+				// Append the textarea element to the document
+				document.body.appendChild(tempInput);
+				// Select the text in the textarea
+				tempInput.select();
+				// Copy the selected text to the clipboard
+				document.execCommand('copy');
+				// Remove the temporary textarea element
+				document.body.removeChild(tempInput);
+			
+				// Optional: You can provide feedback to the user
+				alert('Copied to clipboard: ' + tempInput.value);
+			});
+			
 		});
 	})
 

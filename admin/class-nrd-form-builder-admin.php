@@ -267,7 +267,12 @@ class Nrd_Form_Builder_Admin {
 			echo '<input type="text" name="google_sheet_id" id="google_sheet_id" style="width: 100%;" value="' . $linkedSheetId . '">';
 			echo '<h3>Google Sheet Page</h3>';
 			echo '<input type="text" name="google_sheet_page" id="google_sheet_page" style="width: 100%;" value="' . $linkedSheetPage . '">';
-		}
+			echo '<br><br>';
+			echo '<div class="info-tab">';
+			echo '<h4>Important</h4>';
+			echo 'In your google sheet, go to share and add this email <b class="copiable-item">nrd-form-builder@doctorappointement-e4d78.iam.gserviceaccount.com</b> as en editor.';
+			echo '</div>';
+		}	
 		
 	}
 	public function hide_publish_box() {
