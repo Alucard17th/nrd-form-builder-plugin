@@ -113,13 +113,19 @@
 				form.append("email", "eddallal.noureddine@gmail.com");
 				form.append("domain", "www.zenappoint.com");
 
+				const bearerToken = "1|Soosxx0JLFKtUKVOobT5aBAZoJEkYCqPNZVDG7Oc45f385e0"
+
 				var settings = {
 					"url": nrdActivateLicenserAPIUrl,
 					"method": "POST",
 					"timeout": 0,
 					"headers": {
-						"Authorization": "Bearer 3|7LDk8Aopn8eaIchFfBkvOD500miXLhzVOtVBrdfYe3487bf9",
-						"Cookie": "XSRF-TOKEN=eyJpdiI6ImxJcUEwelgweDhaZlBzU1BkQkZtSVE9PSIsInZhbHVlIjoiaU5XQ3ZEc3J0c1NVY2YzU0pHUERhWGRUTU5abFZxa0RtaGlTM1laeXpTNFcwMHpCaFA5RXN3RVNkdm5GU1lrQVVpYlVhclA4MHAyaGVMQy9tSWZwajU2VExxRzFQRG15Qjc3OU5lUEVsN2tUY0pISktYRzZwZWhYN3JnY2VtVGMiLCJtYWMiOiJmYjhkZTk2Nzc1NTA3Mzc0NjJlODcyZGNhNTcxODFjMjI2NWNiY2JmOThhNjQ0OTNjODBkNGYzZTgyNjgxOTI2IiwidGFnIjoiIn0%3D; laravel_session=eyJpdiI6IjBVeU5OK3JMTmpEVXVtU1pBYVR2dUE9PSIsInZhbHVlIjoiWlFxYzR1RWlidUxPT2xDdnA3RURZUkM5ZzdpZ1dTMlJVTVN2MVpxbitMazlrWXppaFFGa0tON3BWN1lUNTVzeVZUR0VIRHdhV1E0Y2RMWDNRS1ZjNTlwOWtKYW81cDhtQU9yaDF1cTRUWUNxWEhhN2ZOb0pIcU9jR2tFTGtxZHMiLCJtYWMiOiJjMjUwMDc4Y2M3MDlkN2M3NjIzZjk5ZmZjZThiMTgzODlkOWVlODFiMzgyZjdkZGY0N2FmMzI1OThhOWNiY2ZiIiwidGFnIjoiIn0%3D"
+						"Authorization": "Bearer " + bearerToken,
+						// "Cookie": "XSRF-TOKEN=eyJpdiI6ImxJcUEwelgweDhaZlBzU1BkQkZtSVE9PSIsInZhbHVlIjoiaU5XQ3ZEc3J0c1NVY2YzU0pHUERhWGRUTU5abFZxa0RtaGlTM1laeXpTNFcwMHpCaFA5RXN3RVNkdm5GU1lrQVVpYlVhclA4MHAyaGVMQy9tSWZwajU2VExxRzFQRG15Qjc3OU5lUEVsN2tUY0pISktYRzZwZWhYN3JnY2VtVGMiLCJtYWMiOiJmYjhkZTk2Nzc1NTA3Mzc0NjJlODcyZGNhNTcxODFjMjI2NWNiY2JmOThhNjQ0OTNjODBkNGYzZTgyNjgxOTI2IiwidGFnIjoiIn0%3D; laravel_session=eyJpdiI6IjBVeU5OK3JMTmpEVXVtU1pBYVR2dUE9PSIsInZhbHVlIjoiWlFxYzR1RWlidUxPT2xDdnA3RURZUkM5ZzdpZ1dTMlJVTVN2MVpxbitMazlrWXppaFFGa0tON3BWN1lUNTVzeVZUR0VIRHdhV1E0Y2RMWDNRS1ZjNTlwOWtKYW81cDhtQU9yaDF1cTRUWUNxWEhhN2ZOb0pIcU9jR2tFTGtxZHMiLCJtYWMiOiJjMjUwMDc4Y2M3MDlkN2M3NjIzZjk5ZmZjZThiMTgzODlkOWVlODFiMzgyZjdkZGY0N2FmMzI1OThhOWNiY2ZiIiwidGFnIjoiIn0%3D",
+						"Accept": "application/json"
+					},
+					xhrFields: {
+						withCredentials: false 
 					},
 					"processData": false,
 					"mimeType": "multipart/form-data",
@@ -175,12 +181,18 @@
 				// form.append("key", "A3D697Q9WWJhFS4TlkvnmpXLY");
 				form.append("key", licenseKey);
 
+				const bearerToken = "1|Soosxx0JLFKtUKVOobT5aBAZoJEkYCqPNZVDG7Oc45f385e0"
+
 				var settings = {
 					"url": nrdDeactivateLicenserAPIUrl,
 					"method": "POST",
 					"timeout": 0,
 					"headers": {
-						"Authorization": "Bearer 3|7LDk8Aopn8eaIchFfBkvOD500miXLhzVOtVBrdfYe3487bf9"
+						"Authorization": "Bearer " + bearerToken,
+						"Accept": "application/json"
+					},
+					xhrFields: {
+						withCredentials: false
 					},
 					"processData": false,
 					"mimeType": "multipart/form-data",
