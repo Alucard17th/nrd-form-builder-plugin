@@ -171,6 +171,16 @@ class Nrd_Form_Builder {
 			$this->loader->add_action( 'wp_ajax_save_nrd_wp_fb', $plugin_admin, 'save_nrd_wp_fb' );
 			$this->loader->add_action( 'wp_ajax_nopriv_save_nrd_wp_fb', $plugin_admin, 'save_nrd_wp_fb' );
 			$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'disable_autosave_for_nrd_form_bd' );
+
+			$this->loader->add_action('init', $plugin_admin, 'register_cpt_nrd_form_bd_submission');
+			// Admin UI: columns for submissions list
+			$this->loader->add_action('add_meta_boxes', $plugin_admin, 'add_submission_details_metabox');
+			$this->loader->add_filter('manage_nrd-form-bd-submission_posts_columns', $plugin_admin, 'submissions_columns');
+			$this->loader->add_action('manage_nrd-form-bd-submission_posts_custom_column', $plugin_admin, 'submissions_column_content', 10, 2);
+			$this->loader->add_filter('manage_edit-nrd-form-bd-submission_sortable_columns', $plugin_admin, 'submissions_sortable_columns');
+
+			// Optional: put Submissions under the same top-level menu
+			$this->loader->add_action('admin_menu', $plugin_admin, 'register_submissions_submenu');
 		}
 	}
 

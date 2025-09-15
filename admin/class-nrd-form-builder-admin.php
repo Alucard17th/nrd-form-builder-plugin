@@ -212,7 +212,8 @@ class Nrd_Form_Builder_Admin {
 
 		register_post_type('nrd-form-bd', $args);
 	}
-	public function add_custom_meta_box() {
+	public function add_custom_meta_box() 
+	{
 		add_meta_box(
 			'nrd_form_bd_meta_box',          // Unique ID
 			'From Builder',         // Box title
@@ -229,7 +230,8 @@ class Nrd_Form_Builder_Admin {
 			'side',                         // Context
 		);
 	}
-	public function custom_meta_box_html($post) {
+	public function custom_meta_box_html($post) 
+	{
 		// wp_nonce_field('nrd_form_bd_meta_box', 'nrd_form_bd_meta_box_nonce');
 		$screen = get_current_screen();
 		$content = $post->post_content;
@@ -254,7 +256,8 @@ class Nrd_Form_Builder_Admin {
 		echo '<div id="fb-editor"></div>';
 		echo '</div>';
 	}
-	public function custom_meta_box_html_drive_sheet($post) {
+	public function custom_meta_box_html_drive_sheet($post) 
+	{
 		// wp_nonce_field('nrd_form_bd_meta_box', 'nrd_form_bd_meta_box_nonce');
 		$screen = get_current_screen();
 		
@@ -275,10 +278,12 @@ class Nrd_Form_Builder_Admin {
 		}	
 		
 	}
-	public function hide_publish_box() {
+	public function hide_publish_box() 
+	{
 		remove_meta_box('submitdiv', 'nrd-form-bd', 'side');
 	}
-	public function disable_autosave_for_nrd_form_bd( $pagehook ) {
+	public function disable_autosave_for_nrd_form_bd( $pagehook ) 
+	{
 		global $post_type, $current_screen;
 		if($post_type == 'nrd-form-bd' ){
 			wp_deregister_script( 'autosave' );
@@ -333,7 +338,8 @@ class Nrd_Form_Builder_Admin {
 		}
 	}
 
-	function isLicenseActive() {
+	function isLicenseActive() 
+	{
 		$license_key = get_option( 'nrd_form_builder_license_key' );
 		$license_status = get_option( 'nrd_form_builder_license_status' );
 		$license_expiry = get_option( 'nrd_form_builder_license_expiry' );
@@ -354,5 +360,197 @@ class Nrd_Form_Builder_Admin {
 		wp_send_json_success( 'License Updated to ' . $status . ' || ' . $license);
 	}
 
-	// SAVE THE EXCEL SHEET 
+	public function register_cpt_nrd_form_bd_submission() 
+	{
+		$labels = array(
+			'name'               => 'NRD BD Submissions',
+			'singular_name'      => 'NRD BD Submission',
+			'menu_name'          => 'Submissions',
+			'name_admin_bar'     => 'Submission',
+			'add_new'            => 'Add New',
+			'add_new_item'       => 'Add New Submission',
+			'new_item'           => 'New Submission',
+			'edit_item'          => 'View Submission',
+			'view_item'          => 'View Submission',
+			'all_items'          => 'All Submissions',
+			'search_items'       => 'Search Submissions',
+			'not_found'          => 'No submissions found.',
+			'not_found_in_trash' => 'No submissions found in Trash.',
+		);
+
+		$args = array(
+			'labels'             => $labels,
+			'public'             => false,
+			'publicly_queryable' => false,
+			'show_ui'            => true,
+			'show_in_menu'       => false, // we’ll mount under your main menu
+			'query_var'          => true,
+			'rewrite'            => false,
+			'capability_type'    => 'post',
+			'has_archive'        => false,
+			'hierarchical'       => false,
+			'menu_position'      => null,
+			'supports'           => array('title', 'custom-fields'),
+		);
+
+		register_post_type('nrd-form-bd-submit', $args);
+	}
+
+	public function register_submissions_submenu() {
+		add_submenu_page(
+			'nrd-form-bd-menu-slug',       // parent slug (your main menu)
+			'Submissions',                 // page title
+			'Submissions',                 // menu title
+			'manage_options',              // capability
+			'edit.php?post_type=nrd-form-bd-submit' // target
+		);
+	}
+
+	public function submissions_columns($columns) {
+		$new = array();
+		$new['cb'] = $columns['cb'];
+		$new['title'] = 'Submission';
+		$new['parent_form'] = 'Form';
+		$new['fields_count'] = 'Fields';
+		$new['date'] = 'Date';
+		$new['preview'] = 'Preview';
+		return $new;
+	}
+
+	public function submissions_column_content($column, $post_id) {
+		switch ($column) {
+			case 'parent_form':
+				$parent_id = wp_get_post_parent_id($post_id);
+				if ($parent_id) {
+					$link = get_edit_post_link($parent_id);
+					echo '<a href="'.esc_url($link).'">'.esc_html(get_the_title($parent_id)).'</a>';
+				} else {
+					echo '—';
+				}
+				break;
+
+			case 'fields_count':
+				$data = get_post_meta($post_id, '_nrd_fb_submission_json', true);
+				if ($data) {
+					$arr = json_decode($data, true);
+					echo is_array($arr) ? count($arr) : '—';
+				} else {
+					echo '—';
+				}
+				break;
+
+			case 'preview':
+				$data = get_post_meta($post_id, '_nrd_fb_submission_json', true);
+				if ($data) {
+					$arr = json_decode($data, true);
+					if (is_array($arr)) {
+						// Show first 2 fields as a quick glance
+						$pairs = array_slice($arr, 0, 2);
+						foreach ($pairs as $k => $v) {
+							echo '<div><strong>'.esc_html($k).':</strong> '.esc_html(is_scalar($v)?$v:json_encode($v)).'</div>';
+						}
+					} else {
+						echo '—';
+					}
+				} else {
+					echo '—';
+				}
+				break;
+		}
+	}
+
+	public function submissions_sortable_columns($columns) {
+		$columns['parent_form'] = 'parent_form';
+		return $columns;
+	}
+
+	public function add_submission_details_metabox() {
+		add_meta_box(
+			'nrd_fb_submission_details',
+			'Submission Details',
+			array($this, 'render_submission_details_metabox'),
+			'nrd-form-bd-submit',
+			'normal',
+			'high'
+		);
+	}
+
+	public function render_submission_details_metabox($post) {
+		// Parent form link
+		$parent_id = wp_get_post_parent_id($post->ID);
+		echo '<p><strong>Form:</strong> ';
+		if ($parent_id) {
+			echo '<a href="' . esc_url(get_edit_post_link($parent_id)) . '">' . esc_html(get_the_title($parent_id)) . '</a>';
+		} else {
+			echo '—';
+		}
+		echo '</p>';
+
+		// Quick look fields
+		$name  = get_post_meta($post->ID, '_nrd_fb_name', true);
+		$email = get_post_meta($post->ID, '_nrd_fb_email', true);
+		if ($name || $email) {
+			echo '<p>';
+			if ($name)  echo '<strong>Name:</strong> ' . esc_html($name) . '&nbsp;&nbsp;';
+			if ($email) echo '<strong>Email:</strong> ' . esc_html($email);
+			echo '</p>';
+		}
+
+		// Load JSON payload
+		$json = get_post_meta($post->ID, '_nrd_fb_submission_json', true);
+		if (!$json) {
+			echo '<p><em>No submission payload found.</em></p>';
+			return;
+		}
+
+		$data = json_decode($json, true);
+		if (!is_array($data)) {
+			echo '<p><em>Submission payload could not be decoded.</em></p>';
+			return;
+		}
+
+		// Table of fields
+		echo '<table class="widefat striped" style="max-width:900px">';
+		echo '<thead><tr><th style="width:240px">Field</th><th>Value</th></tr></thead><tbody>';
+
+		foreach ($data as $key => $value) {
+			echo '<tr>';
+			echo '<td><code>' . esc_html($key) . '</code></td>';
+			echo '<td>' . $this->nrd_fb_pretty_value($value) . '</td>';
+			echo '</tr>';
+		}
+
+		echo '</tbody></table>';
+
+		// Raw JSON (collapsible)
+		echo '<details style="margin-top:12px"><summary>Raw JSON</summary>';
+		echo '<pre style="white-space:pre-wrap;background:#f6f7f7;padding:12px;border:1px solid #e2e4e7;border-radius:4px;">' .
+			esc_html(json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) .
+			'</pre></details>';
+	}
+
+	/**
+	 * Nicely render values (arrays/objects/files/links).
+	 */
+	private function nrd_fb_pretty_value($value) {
+		// File URLs → clickable links
+		$maybeUrl = is_string($value) ? trim($value) : '';
+		if ($maybeUrl && filter_var($maybeUrl, FILTER_VALIDATE_URL)) {
+			// If it’s a media URL show as link
+			return '<a href="' . esc_url($maybeUrl) . '" target="_blank" rel="noopener noreferrer">' . esc_html($maybeUrl) . '</a>';
+		}
+
+		// Arrays/objects → pretty JSON
+		if (is_array($value) || is_object($value)) {
+			return '<pre style="white-space:pre-wrap;margin:0;">' .
+				esc_html(json_encode($value, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) .
+				'</pre>';
+		}
+
+		// Scalars → plain text
+		return nl2br(esc_html((string)$value));
+	}
+
+
+
 }

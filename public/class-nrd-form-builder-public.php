@@ -119,6 +119,7 @@ class Nrd_Form_Builder_Public {
 			$output .=  '<input type="hidden" id="google_sheet_id" value="' . $linkedSheetId . '">';
 			$output .=  '<input type="hidden" id="google_sheet_page" value="' . $linkedSheetPage . '">';
 			$output .=  '<input type="hidden" id="form_title" value="' . $title . '">';
+			$output .= '<input type="hidden" id="form_id" value="' . intval($id) . '">';
 
 			if($content != ''){
 				$json_content = json_encode($content);
@@ -132,94 +133,173 @@ class Nrd_Form_Builder_Public {
         add_shortcode('nrd_form_bd', 'render_nrd_form_bd');
 	}
 
-	public function post_nrd_wp_fb()
-	{
+	public function post_nrd_wp_fb() {
 		if (!function_exists('wp_handle_upload')) {
-			require_once(ABSPATH . 'wp-admin/includes/file.php');
+			require_once ABSPATH . 'wp-admin/includes/file.php';
 		}
 
 		$uploaded_files = array();
-		$errors = array();
+		$successMessages = array();
+		$errorMessages   = array();
 
-		// Loop through all files in the $_FILES array
-		if(!empty($_FILES)) {
+		// 1) Handle uploads safely
+		if (!empty($_FILES)) {
 			foreach ($_FILES as $file_key => $file) {
-				// Check if the file is valid and not empty
-				if ($file['error'] === UPLOAD_ERR_OK && $file['size'] > 0) {
-					// Handle the file upload
-					$upload_overrides = array('test_form' => false);
-					$movefile = wp_handle_upload($file, $upload_overrides);
-		
-					if ($movefile && !isset($movefile['error'])) {
-						// File uploaded successfully, insert it into the media library
-						$attachment = array(
-							'guid'           => $movefile['url'],
-							'post_mime_type' => $movefile['type'],
-							'post_title'     => preg_replace('/\.[^.]+$/', '', basename($movefile['file'])),
-							'post_content'   => '',
-							'post_status'    => 'inherit'
-						);
-		
-						$attach_id = wp_insert_attachment($attachment, $movefile['file']);
-						require_once(ABSPATH . 'wp-admin/includes/image.php');
-						$attach_data = wp_generate_attachment_metadata($attach_id, $movefile['file']);
-						wp_update_attachment_metadata($attach_id, $attach_data);
-		
-						$uploaded_files[$file_key] = wp_get_attachment_url($attach_id);
+				try {
+					if ($file['error'] === UPLOAD_ERR_OK && $file['size'] > 0) {
+						$upload_overrides = array('test_form' => false);
+						$movefile = wp_handle_upload($file, $upload_overrides);
+
+						if ($movefile && !isset($movefile['error'])) {
+							// Insert into media library
+							$attachment = array(
+								'guid'           => $movefile['url'],
+								'post_mime_type' => $movefile['type'],
+								'post_title'     => preg_replace('/\.[^.]+$/', '', basename($movefile['file'])),
+								'post_content'   => '',
+								'post_status'    => 'inherit',
+							);
+
+							$attach_id = wp_insert_attachment($attachment, $movefile['file']);
+							if (is_wp_error($attach_id)) {
+								$errorMessages[] = 'Failed to register file in Media Library.';
+								continue;
+							}
+
+							require_once ABSPATH . 'wp-admin/includes/image.php';
+							$attach_data = wp_generate_attachment_metadata($attach_id, $movefile['file']);
+							wp_update_attachment_metadata($attach_id, $attach_data);
+
+							$uploaded_files[$file_key] = wp_get_attachment_url($attach_id);
+						} else {
+							$msg = isset($movefile['error']) ? $movefile['error'] : 'Unknown upload error';
+							$errorMessages[] = 'Error uploading file (' . esc_html($file_key) . '): ' . esc_html($msg);
+						}
 					} else {
-						$errors[$file_key] = 'Error uploading file: ' . $movefile['error'];
+						// Map common PHP upload errors
+						$errorMessages[] = 'File upload error (' . esc_html($file_key) . '): code ' . intval($file['error']);
 					}
-				} else {
-					$errors[$file_key] = 'File upload error: ' . $file['error'];
+				} catch (\Throwable $t) {
+					$errorMessages[] = 'Unexpected file upload error (' . esc_html($file_key) . '): ' . esc_html($t->getMessage());
 				}
 			}
 		}
-		
-		// from POST array create a new array but remove action and google_sheet_id
+
+		// 2) Build form data (exclude WP internal fields)
 		$dataArray = $_POST;
-		unset($dataArray['action']);
-		unset($dataArray['google_sheet_id']);
-		unset($dataArray['google_sheet_page']);
-		unset($dataArray['form_title']);
+		unset($dataArray['action'], $dataArray['google_sheet_id'], $dataArray['google_sheet_page'], $dataArray['form_title']);
 
-		// merge dataArray and uploaded_files array to create final array
-		$form_data = array_merge($dataArray, $uploaded_files);
-		$googleSheetId = $_POST['google_sheet_id'];
-		$googleSheetPage = $_POST['google_sheet_page'];
-		$formTitle = $_POST['form_title'];
-		$successMessages = [];
-		$errorMessages = [];
+		// Merge posted fields + uploaded file URLs
+		$form_data      = array_merge($dataArray, $uploaded_files);
+		$googleSheetId  = isset($_POST['google_sheet_id']) ? sanitize_text_field($_POST['google_sheet_id']) : '';
+		$googleSheetPage= isset($_POST['google_sheet_page']) ? sanitize_text_field($_POST['google_sheet_page']) : '';
+		$formTitle      = isset($_POST['form_title']) ? sanitize_text_field($_POST['form_title']) : 'Form Submission';
+		$formId         = isset($_POST['form_id']) ? intval($_POST['form_id']) : 0;
 
-		$sent = $this->sendNotificationEmail($form_data, $formTitle);
-        if ($sent) {
-			$successMessages[] = 'Form data received and email sent successfully';
-		} else {
-			$errorMessages[] = 'Failed to send email';
+		// 3) Send notification email
+		try {
+			$sent = $this->sendNotificationEmail($form_data, $formTitle);
+			if ($sent) {
+				$successMessages[] = 'Form data received and email sent successfully';
+			} else {
+				$errorMessages[] = 'Failed to send email';
+			}
+		} catch (\Throwable $t) {
+			$errorMessages[] = 'Email error: ' . esc_html($t->getMessage());
 		}
 
-		if ($googleSheetId != '') {
-			$result = $this->addLeadToGoogleSheets($form_data, $googleSheetId, $googleSheetPage);
-			if ($result === true) {
-				$successMessages[] = 'Lead added to Google Sheets successfully';
-			} else {
-				// $result contains the error message returned from addLeadToGoogleSheets
-				$errorMessages[] = 'Failed to add lead to Google Sheets: ' . $result;
+		// 4) Google Sheets (optional)
+		if (!empty($googleSheetId)) {
+			try {
+				$result = $this->addLeadToGoogleSheets($form_data, $googleSheetId, $googleSheetPage);
+				if ($result === true) {
+					$successMessages[] = 'Lead added to Google Sheets successfully';
+				} else {
+					$errorMessages[] = 'Failed to add lead to Google Sheets: ' . esc_html($result);
+				}
+			} catch (\Throwable $t) {
+				$errorMessages[] = 'Google Sheets error: ' . esc_html($t->getMessage());
 			}
 		}
 
-		if (empty($errorMessages)) {
-			wp_send_json_success(array(
-				'status' => 'success',
-				'messages' => $successMessages
-			));
+		// 5) Create submission CPT (always try, but don’t hard-fail whole request)
+		$submissionResult = $this->createSubmissionPost($formId, $form_data, $formTitle);
+		if ($submissionResult['ok']) {
+			$successMessages[] = 'Submission saved (ID: ' . intval($submissionResult['id']) . ')';
 		} else {
-			wp_send_json_error(array(
-				'status' => 'error',
-				'messages' => $errorMessages
-			));
+			$errorMessages[] = 'Failed to save submission: ' . esc_html($submissionResult['error']);
+		}
+
+		// 6) Respond
+		$payload = array(
+			'status'          => empty($errorMessages) ? 'success' : 'error',
+			'messages'        => $successMessages,
+			'errors'          => $errorMessages,
+			'submission_id'   => $submissionResult['ok'] ? intval($submissionResult['id']) : null,
+		);
+
+		if (empty($errorMessages)) {
+			wp_send_json_success($payload);
+		} else {
+			wp_send_json_error($payload);
 		}
 
 		wp_die();
+	}
+
+		/**
+	 * Create a submission CPT and save payload.
+	 *
+	 * @param int    $formIdFromRequest  Parent form ID.
+	 * @param array  $form_data          Flat field map (includes file URLs).
+	 * @param string $formTitle          Used for submission post_title.
+	 *
+	 * @return array { ok: bool, id?: int, error?: string }
+	 */
+	private function createSubmissionPost($formIdFromRequest, array $form_data, $formTitle) {
+		try {
+			$title = (string) ($formTitle ?: 'Form Submission');
+			$submission_post = array(
+				'post_type'   => 'nrd-form-bd-submit',
+				'post_status' => 'publish',
+				'post_title'  => $title . ' – ' . current_time('mysql'),
+				'post_parent' => $formIdFromRequest ?: 0,
+			);
+
+			$submission_id = wp_insert_post($submission_post, true);
+			if (is_wp_error($submission_id)) {
+				return array('ok' => false, 'error' => $submission_id->get_error_message());
+			}
+
+			// Full JSON payload
+			$encoded = wp_json_encode($form_data);
+			if ($encoded === false || $encoded === null) {
+				// Still create the post, but warn
+				update_post_meta($submission_id, '_nrd_fb_json_error', 'Failed to encode submission payload as JSON');
+			} else {
+				add_post_meta($submission_id, '_nrd_fb_submission_json', $encoded);
+			}
+
+			// Per-field meta (strings only; arrays/objects to JSON)
+			foreach ($form_data as $key => $value) {
+				$meta_key = sanitize_key('_fld_' . $key);
+				$val      = is_scalar($value) ? (string)$value : wp_json_encode($value);
+				// sanitize text, but allow URLs/emails to pass as text
+				add_post_meta($submission_id, $meta_key, wp_kses_post($val));
+			}
+
+			// Common quick-look fields
+			if (!empty($form_data['email'])) {
+				update_post_meta($submission_id, '_nrd_fb_email', sanitize_email($form_data['email']));
+			}
+			if (!empty($form_data['name'])) {
+				update_post_meta($submission_id, '_nrd_fb_name', sanitize_text_field($form_data['name']));
+			}
+
+			return array('ok' => true, 'id' => (int) $submission_id);
+		} catch (\Throwable $t) {
+			return array('ok' => false, 'error' => $t->getMessage());
+		}
 	}
 
 	function addLeadToGoogleSheets($leadData, $googleSheetId, $googleSheetPage) {
@@ -279,7 +359,6 @@ class Nrd_Form_Builder_Public {
 			return $e->getMessage(); 
 		}
 	}
-
 	function sendNotificationEmail($form_data, $formTitle) {
 		// get wordpress admin email 
 		$adminEmail = get_option('admin_email');
